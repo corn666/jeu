@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    canvas {
+
+      border:1px solid #000;
+  }
+  table
+  {
+      border-collapse: collapse;
+  }
+  td, th
+  {
+      border: 1px solid black;
+      text-align: center;
+  }
+
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+<br>
+  <table>
+   <caption>TOUCHES</caption>
+
+   <tr>
+       <th>ACTION</th>
+       <th>P1</th>
+       <th>P2</th>
+   </tr>
+   <tr>
+       <td>UP</td>
+       <td>Z</td>
+       <td>Fleche UP</td>
+   </tr>
+   <tr>
+       <td>DOWN</td>
+       <td>S</td>
+       <td>Fleche DWN</td>
+   </tr>
+   <tr>
+       <td>GAUCHE</td>
+       <td>Q</td>
+       <td>Fleche G</td>
+   </tr>
+   <tr>
+       <td>DROITE</td>
+       <td>D</td>
+       <td>Fleche D</td>
+   </tr>
+   <tr>
+       <td>TIR</td>
+       <td>ESPACE</td>
+       <td>CTRL_D</td>
+   </tr>
+
+</table>
+
+  <script>
+    //var de controle
+    var c_i=0;
+    var c_j=0;
+
+
+    //var du jeu
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+    var taille=600;
+    canvas.width = canvas.height =taille;
+    var anglep1;
+    var anglep2;
+    var keys=[];
+    var audioshoot = new Audio('shoot2.wav');
+    var audioboom = new Audio('Boom.wav');
+    var xn=0;
+    var yn=0;
+    var speed=2;
+    var speedShoot=6
+    var friction=0.976;
+    var lastCalledTime;
+    var fps;
+
+    var p1 = {
+      x:50,
+      y:taille/2,
+      color:"blue",
+      canonAngle:0,
+      velX:0,
+      velY:0,
+      size:15
+      }
+
+    var p2 = {
+      x:taille-50,
+      y:taille/2,
+      color:"red",
+      canonAngle:180,
+      velX:0,
+      velY:0,
+      size:15
+      }
+
+    var shootp1 ={
+      x:605,
+      y:-10,
+      color:"blue",
+      score:0,
+      size:4,
+      }
+
+    var shootp2 = {
+      x:-5,
+      y:-10,
+      color:"red",
+      score:0,
+      size:4,
+      }
+
+//cette fonction sert a surveiller l'array "keys" pour savoir quelles touches sont pressée
+//et modifie la position de p1 et p2 en fonction
+function update(){
+
+  if(keys[37]){    //lEFT
+    if (p2.velX > -speed) {
+            p2.velX--;
+            }
+p2.canonAngle=180;
+  }
+  if(keys[38]){    //UP
+    if (p2.velY > -speed) {
+            p2.velY--;
+      }
+  p2.canonAngle=270;
+  }
+
+  if(keys[39]){    //RIGHT
+    if (p2.velX < speed) {
+            p2.velX++;
+    }
+    p2.canonAngle=0;
+  }
+
+  if(keys[40]){    //DOWN
+    if (p2.velY < speed) {
+            p2.velY++;
+    }
+    p2.canonAngle=90;
+  }
+
+  if(keys[81]){    //Q
+    if (p1.velX > -speed) {
+            p1.velX--;
+      }
+      p1.canonAngle=180;
+  }
+
+  if(keys[90]){    //Z
+    if (p1.velY > -speed) {
+            p1.velY--;
+    }
+    p1.canonAngle=270;
+  }
+
+  if(keys[68]){    //D
+    if (p1.velX < speed) {
+            p1.velX++;
+    }
+    p1.canonAngle=0;
+  }
+
+  if(keys[83]){    //S
+    if (p1.velY < speed) {
+            p1.velY++;
+    }
+    p1.canonAngle=90;
+  }
+
+  if (keys[90]&keys[68]){
+    p1.canonAngle=315;
+  }
+
+
+  if (keys[68]&keys[83]){
+    p1.canonAngle=45;
+  }
+
+
+  if (keys[83]&keys[81]){
+    p1.canonAngle=135;
+  }
+
+
+  if (keys[81]&keys[90]){
+    p1.canonAngle=235;
+  }
+
+  if (keys[38]&keys[39]){
+    p2.canonAngle=315;
+  }
+
+
+  if (keys[39]&keys[40]){
+    p2.canonAngle=45;
+  }
+
+
+  if (keys[40]&keys[37]){
+    p2.canonAngle=135;
+  }
+
+
+  if (keys[37]&keys[38]){
+    p2.canonAngle=235;
+  }
+
+  if(keys[32]){    //SPACE
+  shootp1.x=p1.x;
+  shootp1.y=p1.y;
+  anglep1=p1.canonAngle;
+  audioshoot.play();
+  }
+  if(keys[17]){    //R_CTRL
+  shootp2.x=p2.x;
+  shootp2.y=p2.y;
+  anglep2=p2.canonAngle;
+  audioshoot.play();
+
+  }
+  //ici on efface le canvas et on met a jour p1 et P2 (avec les nouvelles positions)
+  //idem pour les projectiles
+  //on check les collisions
+ctx.clearRect(0, 0, taille, taille);
+c_i++
+
+playerUpdate(p1);
+playerUpdate(p2);
+shootplayer(shootp1);
+shootplayer(shootp2);
+mooveshoot(anglep1, shootp1);
+mooveshoot(anglep2, shootp2);
+anglecanon(p1);
+anglecanon(p2);
+collision(p1, shootp2);
+collision(p2, shootp1);
+fpsCalc();
+drawScore();
+
+
+setTimeout(update, 10);
+
+}
+
+function fpsCalc(){
+  if(!lastCalledTime){
+    lastCalledTime=Date.now();
+    fps=0;
+    return;
+  }
+  delta=(Date.now() - lastCalledTime)/1000;
+  lastCalledTime=Date.now();
+  fps=1/delta;
+}
+// on applique un mouvement au projectile enfonction de l'angle du canon et on l'immobilise a la sortie de l'ecran
+function mooveshoot(angle,shoot){
+    switch (angle){
+      case 0: shoot.x+=speedShoot;
+        break;
+      case 90: shoot.y+=speedShoot;
+        break;
+      case 180: shoot.x-=speedShoot;
+        break;
+      case 270:shoot.y-=speedShoot;
+        break;
+      case 315:shoot.x+=speedShoot;
+              shoot.y-=speedShoot;
+        break;
+      case 235:shoot.x-=speedShoot;
+              shoot.y-=speedShoot;
+        break;
+      case 45:shoot.x+=speedShoot;
+              shoot.y+=speedShoot;
+        break;
+      case 135:shoot.x-=speedShoot;
+              shoot.y+=speedShoot;
+      default: //shootp1.x+=0;
+      }
+
+  if(shoot.x>taille+shoot.size){shoot.x=taille+shoot.size;}
+
+}
+
+// la fonction ralentis la vitesse (effet friction quand on lache la touche)
+//ensuite verifie et empeche le vaisseau de sortir de sa section du canvas
+// et le redessine
+function playerUpdate(player){
+
+      player.velY *= friction;
+      player.y += player.velY;
+      player.velX *= friction;
+      player.x += player.velX;
+
+  if (player.x >= taille-player.size) {
+        player.x = taille-player.size;
+    } else if (player.x <= player.size) {
+        player.x = player.size;
+    }
+    if (player.y >= taille-player.size) {
+          player.y = taille-player.size;
+      } else if (player.y <= player.size) {
+          player.y = player.size;
+      }
+
+    ctx.fillStyle = player.color;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+    ctx.fill();
+
+
+}
+
+
+function anglecanon(p) {
+    ctx.beginPath();
+    ctx.lineWidth  = 5;
+    angle =p.canonAngle* Math.PI / 180;
+    var x2 = p.x + (p.size+6) * Math.cos(angle),
+        y2 = p.y + (p.size+6) * Math.sin(angle);
+    //ctx.strokeStyle="green";
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.closePath();
+
+}
+
+
+//ici on dessine le score de P1 et P2 et la position X des projectiles(pour contrôle)
+function drawScore() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "blue";
+    ctx.fillText("P1: "+shootp1.score,10, 20, canvas.width-65, 20);
+    ctx.fillStyle = "red";
+    ctx.fillText("P2: "+shootp2.score, taille-50, 20, canvas.width-65, 20);
+    ctx.fillStyle = "black";
+    ctx.fillText(" FPS: "+Math.round(fps), taille/2, 20, canvas.width-65, 20);
+
+}
+//ici on dessine le projectile
+function shootplayer(shoot){
+  ctx.fillStyle = shoot.color;
+  ctx.beginPath();
+  ctx.arc(shoot.x, shoot.y, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.closePath();
+
+}
+update();
+
+//verification de colision entre projectile et vaisso
+function collision(a,b){
+var circle1 = {radius: a.size, x: a.x, y: a.y};
+var circle2 = {radius: b.size, x: b.x, y: b.y};
+
+var dx = circle1.x - circle2.x;
+var dy = circle1.y - circle2.y;
+var distance = Math.sqrt(dx * dx + dy * dy);
+
+if (distance < circle1.radius + circle2.radius) {
+  audioboom.play();
+  b.score++
+  loose(a)
+}
+}
+//ici on affiche un msg et on reset les positions
+function loose(looser){
+  /*ctx.font = "16px Arial";
+  ctx.fillStyle = "black";
+  ctx.textAlign = "center";
+  ctx.fillText("Boom!", 300, 300, canvas.width-65, 20);
+  ctx.fillText("press 'ENTER' to Restart",300, 320, canvas.width-65, 20);
+*/
+
+
+  p1.x=50;
+  p1.y=taille/2;
+  p2.x=taille-50;
+  p2.y=taille/2;
+  shootp1.x=605;
+  shootp1.y=-10;
+  shootp2.x=-5;
+  shootp2.y=-10;
+  p1.canonAngle=0;
+  p2.canonAngle=180;
+
+
+}
+
+
+//ici on surveille les touches du clavier et on les transmet a l'array "keys"
+    document.body.addEventListener("keydown", function (e) {
+    keys[e.keyCode] = true;
+
+});
+document.body.addEventListener("keyup", function (e) {
+    keys[e.keyCode] = false;
+
+});
+
+  </script>
+</body>
+</html>
